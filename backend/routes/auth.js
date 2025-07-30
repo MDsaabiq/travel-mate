@@ -20,8 +20,11 @@ router.post('/register', [
   body('travelPersona').isIn(['solo', 'planner', 'adventurer']).withMessage('Invalid travel persona')
 ], async (req, res) => {
   try {
+    console.log('Registration request body:', req.body);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 

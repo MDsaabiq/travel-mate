@@ -2,8 +2,26 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
 import { authenticate } from '../middleware/auth.js';
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
 
 const router = express.Router();
+
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  },
+});
 
 // Get user profile
 router.get('/:id/profile', authenticate, async (req, res) => {
@@ -99,6 +117,78 @@ router.get('/', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Get users error:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user's organized trips
+router.get('/:id/trips/organized', authenticate, async (req, res) => {
+  try {
+    const Trip = (await import('../models/Trip.js')).default;
+
+    const trips = await Trip.find({ organizer: req.params.id })
+      .populate('organizer', 'name photo city travelPersona')
+      .populate('participants', 'name photo')
+      .sort({ createdAt: -1 });
+
+    res.json({ trips });
+  } catch (error) {
+    console.error('Get organized trips error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user's joined trips
+router.get('/:id/trips/joined', authenticate, async (req, res) => {
+  try {
+    const Trip = (await import('../models/Trip.js')).default;
+
+    const trips = await Trip.find({
+      participants: req.params.id,
+      organizer: { $ne: req.params.id }
+    })
+      .populate('organizer', 'name photo city travelPersona')
+      .populate('participants', 'name photo')
+      .sort({ createdAt: -1 });
+
+    res.json({ trips });
+  } catch (error) {
+    console.error('Get joined trips error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Upload profile image
+router.post('/upload-profile-image', authenticate, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+
+    // Upload to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'image',
+          folder: 'travel-mate/profiles',
+          transformation: [
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+            { quality: 'auto', fetch_format: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(req.file.buffer);
+    });
+
+    res.json({
+      message: 'Profile image uploaded successfully',
+      imageUrl: result.secure_url
+    });
+  } catch (error) {
+    console.error('Profile image upload error:', error);
+    res.status(500).json({ message: 'Failed to upload profile image' });
   }
 });
 

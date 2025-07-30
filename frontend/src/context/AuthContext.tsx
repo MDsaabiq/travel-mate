@@ -27,7 +27,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Configure axios defaults
 axios.defaults.baseURL = `${API_BASE_URL}/api`;
@@ -54,7 +54,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const response = await axios.get('/auth/me');
           setUser(response.data.user);
         } catch (error) {
-          console.error('Auth check failed:', error);
           localStorage.removeItem('token');
           setToken(null);
         }
@@ -94,7 +93,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toast.success('Registration successful!');
       return true;
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      console.error('Registration error:', error);
+      console.error('Error response:', error.response?.data);
+
+      // Handle validation errors
+      if (error.response?.data?.errors) {
+        const firstError = error.response.data.errors[0];
+        toast.error(firstError.msg || 'Validation error');
+      } else {
+        toast.error(error.response?.data?.message || 'Registration failed');
+      }
       return false;
     }
   };

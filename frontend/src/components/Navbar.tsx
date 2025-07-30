@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Menu, 
-  X, 
-  MapPin, 
-  User, 
-  LogOut, 
-  Plus, 
+import Logo from './Logo';
+import {
+  Menu,
+  X,
+  MapPin,
+  User,
+  LogOut,
+  Plus,
   MessageCircle,
   Bell,
   Search
@@ -39,11 +40,8 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/dashboard" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">TourMates</span>
+          <Link to="/dashboard">
+            <Logo size="md" showText={true} />
           </Link>
 
           {/* Desktop Navigation */}

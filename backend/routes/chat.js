@@ -12,14 +12,17 @@ router.get('/:tripId/messages', authenticate, async (req, res) => {
     const { page = 1, limit = 50 } = req.query;
     const tripId = req.params.tripId;
 
-    // Check if user is a participant of the trip
+    // Check if user is a participant or organizer of the trip
     const trip = await Trip.findById(tripId);
     if (!trip) {
       return res.status(404).json({ message: 'Trip not found' });
     }
 
-    if (!trip.participants.includes(req.user._id)) {
-      return res.status(403).json({ message: 'You are not a participant of this trip' });
+    const isOrganizer = trip.organizer.toString() === req.user._id.toString();
+    const isParticipant = trip.participants.includes(req.user._id);
+
+    if (!isOrganizer && !isParticipant) {
+      return res.status(403).json({ message: 'You are not authorized to access this chat' });
     }
 
     const messages = await Message.find({ tripId })
@@ -58,14 +61,17 @@ router.post('/:tripId/messages', authenticate, [
     const tripId = req.params.tripId;
     const { content } = req.body;
 
-    // Check if user is a participant of the trip
+    // Check if user is a participant or organizer of the trip
     const trip = await Trip.findById(tripId);
     if (!trip) {
       return res.status(404).json({ message: 'Trip not found' });
     }
 
-    if (!trip.participants.includes(req.user._id)) {
-      return res.status(403).json({ message: 'You are not a participant of this trip' });
+    const isOrganizer = trip.organizer.toString() === req.user._id.toString();
+    const isParticipant = trip.participants.includes(req.user._id);
+
+    if (!isOrganizer && !isParticipant) {
+      return res.status(403).json({ message: 'You are not authorized to send messages in this chat' });
     }
 
     const message = new Message({
@@ -101,8 +107,11 @@ router.get('/:tripId/participants', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Trip not found' });
     }
 
-    if (!trip.participants.some(p => p._id.toString() === req.user._id.toString())) {
-      return res.status(403).json({ message: 'You are not a participant of this trip' });
+    const isOrganizer = trip.organizer._id.toString() === req.user._id.toString();
+    const isParticipant = trip.participants.some(p => p._id.toString() === req.user._id.toString());
+
+    if (!isOrganizer && !isParticipant) {
+      return res.status(403).json({ message: 'You are not authorized to access this chat' });
     }
 
     res.json({

@@ -47,7 +47,7 @@ const Trips: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchTrips();
+    fetchTrips(1); // Reset to page 1 when filters change
   }, [searchTerm, filters]);
 
   const fetchTrips = async (page = 1) => {
@@ -55,26 +55,45 @@ const Trips: React.FC = () => {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '12',
-        ...(searchTerm && { search: searchTerm }),
-        ...(filters.destination && { destination: filters.destination }),
-        ...(filters.startDate && { startDate: filters.startDate }),
-        ...(filters.endDate && { endDate: filters.endDate }),
-        ...(filters.travelMode && { travelMode: filters.travelMode })
+        limit: '12'
       });
+
+      // Add search parameter
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm.trim());
+      }
+
+      // Add filter parameters
+      if (filters.destination.trim()) {
+        params.append('destination', filters.destination.trim());
+      }
+      if (filters.startDate) {
+        params.append('startDate', filters.startDate);
+      }
+      if (filters.endDate) {
+        params.append('endDate', filters.endDate);
+      }
+      if (filters.travelMode) {
+        params.append('travelMode', filters.travelMode);
+      }
 
       const response = await axios.get(`/trips?${params}`);
       
       if (page === 1) {
-        setTrips(response.data.trips);
+        setTrips(response.data.trips || []);
       } else {
-        setTrips(prev => [...prev, ...response.data.trips]);
+        setTrips(prev => [...prev, ...(response.data.trips || [])]);
       }
       
-      setPagination(response.data.pagination);
+      setPagination(response.data.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        hasMore: false
+      });
     } catch (error) {
       console.error('Error fetching trips:', error);
       toast.error('Failed to load trips');
+      setTrips([]);
     } finally {
       setLoading(false);
     }
@@ -82,11 +101,12 @@ const Trips: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchTrips(1);
+    // fetchTrips will be called automatically due to useEffect dependency
   };
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    // fetchTrips will be called automatically due to useEffect dependency
   };
 
   const clearFilters = () => {
@@ -97,13 +117,17 @@ const Trips: React.FC = () => {
       travelMode: ''
     });
     setSearchTerm('');
+    // fetchTrips will be called automatically due to useEffect dependency
   };
 
   const loadMore = () => {
-    if (pagination.hasMore) {
+    if (pagination.hasMore && !loading) {
       fetchTrips(pagination.currentPage + 1);
     }
   };
+
+  // Check if any filters are active
+  const hasActiveFilters = searchTerm.trim() || Object.values(filters).some(v => v.trim());
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -216,7 +240,7 @@ const Trips: React.FC = () => {
                 Search
               </button>
               
-              {(searchTerm || Object.values(filters).some(v => v)) && (
+              {hasActiveFilters && (
                 <button
                   type="button"
                   onClick={clearFilters}

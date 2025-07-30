@@ -13,6 +13,10 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Trips from './pages/Trips';
+import CreateTrip from './pages/CreateTrip';
+import TripDetails from './pages/TripDetails';
+import Profile from './pages/Profile';
+import Chat from './pages/Chat';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -55,37 +59,25 @@ const AppContent: React.FC = () => {
           
           <Route path="/trips/:id" element={
             <ProtectedRoute>
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900">Trip Details</h1>
-                <p className="text-gray-600 mt-2">Trip details page coming soon...</p>
-              </div>
+              <TripDetails />
             </ProtectedRoute>
           } />
-          
+
           <Route path="/create-trip" element={
             <ProtectedRoute>
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900">Create Trip</h1>
-                <p className="text-gray-600 mt-2">Trip creation wizard coming soon...</p>
-              </div>
+              <CreateTrip />
             </ProtectedRoute>
           } />
-          
+
           <Route path="/chat" element={
             <ProtectedRoute>
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-                <p className="text-gray-600 mt-2">Chat interface coming soon...</p>
-              </div>
+              <Chat />
             </ProtectedRoute>
           } />
-          
+
           <Route path="/profile" element={
             <ProtectedRoute>
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-                <p className="text-gray-600 mt-2">Profile management coming soon...</p>
-              </div>
+              <Profile />
             </ProtectedRoute>
           } />
           
