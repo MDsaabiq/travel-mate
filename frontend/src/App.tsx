@@ -17,6 +17,7 @@ import CreateTrip from './pages/CreateTrip';
 import TripDetails from './pages/TripDetails';
 import Profile from './pages/Profile';
 import Chat from './pages/Chat';
+import LandingPage from './pages/LandingPage';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -34,6 +35,8 @@ const AppContent: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         {user && <Navbar />}
         <Routes>
+          {/* Landing Page - Always Accessible */}
+          <Route path="/" element={<LandingPage />} />
           {/* Public Routes */}
           <Route 
             path="/login" 
@@ -43,51 +46,39 @@ const AppContent: React.FC = () => {
             path="/register" 
             element={user ? <Navigate to="/dashboard" replace /> : <Register />} 
           />
-          
           {/* Protected Routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
           } />
-          
           <Route path="/trips" element={
             <ProtectedRoute>
               <Trips />
             </ProtectedRoute>
           } />
-          
           <Route path="/trips/:id" element={
             <ProtectedRoute>
               <TripDetails />
             </ProtectedRoute>
           } />
-
           <Route path="/create-trip" element={
             <ProtectedRoute>
               <CreateTrip />
             </ProtectedRoute>
           } />
-
           <Route path="/chat" element={
             <ProtectedRoute>
               <Chat />
             </ProtectedRoute>
           } />
-
           <Route path="/profile" element={
             <ProtectedRoute>
               <Profile />
             </ProtectedRoute>
           } />
-          
-          {/* Default Route */}
-          <Route path="/" element={
-            user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
-          } />
         </Routes>
       </div>
-      
       <Toaster
         position="top-right"
         toastOptions={{

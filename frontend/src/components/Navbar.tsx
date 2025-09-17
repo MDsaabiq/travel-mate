@@ -11,7 +11,8 @@ import {
   Plus,
   MessageCircle,
   Bell,
-  Search
+  Search,
+  Home
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -27,6 +28,7 @@ const Navbar: React.FC = () => {
   };
 
   const navLinks = [
+    { path: '/', label: 'Home', icon: Home },
     { path: '/dashboard', label: 'Dashboard', icon: MapPin },
     { path: '/trips', label: 'Discover', icon: Search },
     { path: '/create-trip', label: 'Create Trip', icon: Plus },
@@ -40,7 +42,7 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/dashboard">
+          <Link to="/">
             <Logo size="md" showText={true} />
           </Link>
 
