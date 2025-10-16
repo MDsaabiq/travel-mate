@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Logo from './Logo';
@@ -14,6 +14,15 @@ import {
   Search,
   Home
 } from 'lucide-react';
+import api from '../services/api'; // Assuming you have an API service
+
+interface Notification {
+  _id: string;
+  message: string;
+  trip: string;
+  isRead: boolean;
+  createdAt: string;
+}
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -21,6 +30,42 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await api.get('/notifications');
+        setNotifications(response.data.notifications);
+        setUnreadCount(response.data.unreadCount);
+      } catch (error) {
+        console.error('Failed to fetch notifications', error);
+      }
+    };
+
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
+
+  const handleNotificationClick = async (notification: Notification) => {
+    navigate(`/trips/${notification.trip}`);
+    setShowNotifications(false);
+
+    if (!notification.isRead) {
+      try {
+        await api.put(`/notifications/${notification._id}/read`);
+        setNotifications(notifications.map(n =>
+          n._id === notification._id ? { ...n, isRead: true } : n
+        ));
+        setUnreadCount(prev => prev - 1);
+      } catch (error) {
+        console.error('Failed to mark notification as read', error);
+      }
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -66,12 +111,44 @@ const Navbar: React.FC = () => {
 
           {/* Profile Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                3
-              </span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                  <div className="px-4 py-2 font-bold text-gray-700">Notifications</div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map(notification => (
+                        <div
+                          key={notification._id}
+                          onClick={() => handleNotificationClick(notification)}
+                          className={`px-4 py-2 text-sm cursor-pointer ${
+                            notification.isRead ? 'text-gray-500' : 'text-gray-800 font-semibold'
+                          } hover:bg-gray-50`}
+                        >
+                          {notification.message}
+                          <div className="text-xs text-gray-400 mt-1">
+                            {new Date(notification.createdAt).toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-sm text-gray-500">No new notifications</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="relative">
               <button

@@ -170,6 +170,10 @@ tripSchema.pre('save', function(next) {
 
 // Virtual field to check if trip is at max capacity
 tripSchema.virtual('isMaxJoined').get(function() {
+  // Handle case where participants might not be populated
+  if (!this.participants || !Array.isArray(this.participants)) {
+    return false;
+  }
   return this.participants.length >= this.maxParticipants;
 });
 

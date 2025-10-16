@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { 
@@ -20,7 +20,8 @@ import {
   Plane,
   Train,
   Bus,
-  Car
+  Car,
+  Trash2
 } from 'lucide-react';
 
 interface Trip {
@@ -34,6 +35,7 @@ interface Trip {
   };
   travelMode: string;
   itinerary: Array<{
+    _id?: string;
     day: number;
     title: string;
     description: string;
@@ -64,6 +66,7 @@ interface Trip {
   }>;
   maxParticipants: number;
   isActive: boolean;
+  status: 'not_started' | 'in_journey' | 'ended';
 }
 
 const TripDetails: React.FC = () => {
@@ -83,7 +86,7 @@ const TripDetails: React.FC = () => {
   const fetchTripDetails = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/trips/${id}`);
+      const response = await api.get(`/trips/${id}`);
       setTrip(response.data.trip);
     } catch (error: any) {
       console.error('Error fetching trip details:', error);
@@ -97,7 +100,7 @@ const TripDetails: React.FC = () => {
   const handleJoinTrip = async () => {
     try {
       setActionLoading(true);
-      await axios.post(`/trips/${id}/join`);
+      await api.post(`/trips/${id}/join`);
       toast.success('Join request sent successfully!');
       fetchTripDetails(); // Refresh data
     } catch (error: any) {
@@ -111,7 +114,7 @@ const TripDetails: React.FC = () => {
   const handleLeaveTrip = async () => {
     try {
       setActionLoading(true);
-      await axios.post(`/trips/${id}/leave`);
+      await api.post(`/trips/${id}/leave`);
       toast.success('Left trip successfully');
       fetchTripDetails(); // Refresh data
     } catch (error: any) {
@@ -125,7 +128,7 @@ const TripDetails: React.FC = () => {
   const handleJoinRequestAction = async (requestId: string, action: 'approve' | 'reject') => {
     try {
       setActionLoading(true);
-      const response = await axios.post(`/trips/${id}/join-requests/${requestId}/${action}`);
+      const response = await api.post(`/trips/${id}/join-requests/${requestId}/${action}`);
       toast.success(`Request ${action}d successfully`);
 
       // Update the trip state immediately to reflect changes
@@ -142,6 +145,22 @@ const TripDetails: React.FC = () => {
     }
   };
 
+  const handleDeleteTrip = async () => {
+    if (window.confirm('Are you sure you want to delete this trip? This action cannot be undone.')) {
+      try {
+        setActionLoading(true);
+        await api.delete(`/trips/${id}`);
+        toast.success('Trip deleted successfully');
+        navigate('/dashboard');
+      } catch (error: any) {
+        console.error('Error deleting trip:', error);
+        toast.error(error.response?.data?.message || 'Failed to delete trip');
+      } finally {
+        setActionLoading(false);
+      }
+    }
+  };
+
   const getTravelModeIcon = (mode: string) => {
     switch (mode) {
       case 'flight': return Plane;
@@ -155,7 +174,7 @@ const TripDetails: React.FC = () => {
   const isOrganizer = trip?.organizer._id === user?._id;
   const isParticipant = trip?.participants.some(p => p._id === user?._id);
   const hasJoinRequest = trip?.joinRequests.some(r => r.user._id === user?._id && r.status === 'pending');
-  const canJoin = trip && !isParticipant && !hasJoinRequest && trip.participants.length < trip.maxParticipants;
+  const canJoin = trip && trip.status !== 'ended' && !isParticipant && !hasJoinRequest && trip.participants.length < trip.maxParticipants;
 
   if (loading) {
     return (
@@ -255,6 +274,16 @@ const TripDetails: React.FC = () => {
                     <span>Leave Trip</span>
                   </button>
                 )}
+                {isOrganizer && (
+                  <button
+                    onClick={handleDeleteTrip}
+                    disabled={actionLoading}
+                    className="flex items-center space-x-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Trip</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -277,15 +306,15 @@ const TripDetails: React.FC = () => {
             {/* Organizer */}
             <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
               <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                {trip.organizer.photo ? (
-                  <img src={trip.organizer.photo} alt={trip.organizer.name} className="w-full h-full rounded-full object-cover" />
+                {trip.organizer?.photo ? (
+                  <img src={trip.organizer.photo} alt={trip.organizer.name || 'Organizer'} className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  <span className="text-gray-600 font-medium">{trip.organizer.name.charAt(0)}</span>
+                  <span className="text-gray-600 font-medium">{trip.organizer?.name?.charAt(0) || 'U'}</span>
                 )}
               </div>
               <div>
-                <p className="font-medium text-gray-900">{trip.organizer.name}</p>
-                <p className="text-sm text-gray-600">Trip Organizer • {trip.organizer.city} • {trip.organizer.travelPersona}</p>
+                <p className="font-medium text-gray-900">{trip.organizer?.name || 'Unknown'}</p>
+                <p className="text-sm text-gray-600">Trip Organizer{trip.organizer?.city ? ` • ${trip.organizer.city}` : ''}{trip.organizer?.travelPersona ? ` • ${trip.organizer.travelPersona}` : ''}</p>
               </div>
             </div>
           </div>
@@ -300,7 +329,7 @@ const TripDetails: React.FC = () => {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Itinerary</h2>
                 <div className="space-y-4">
                   {trip.itinerary.map((item, index) => (
-                    <div key={index} className="border-l-4 border-teal-500 pl-4">
+                    <div key={item._id || `itinerary-${item.day}-${index}`} className="border-l-4 border-teal-500 pl-4">
                       <div className="flex items-center space-x-2 mb-1">
                         <span className="text-sm font-medium text-teal-600">Day {item.day}</span>
                         {item.location && (
@@ -338,14 +367,14 @@ const TripDetails: React.FC = () => {
                   <div key={participant._id} className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
                       {participant.photo ? (
-                        <img src={participant.photo} alt={participant.name} className="w-full h-full rounded-full object-cover" />
+                        <img src={participant.photo} alt={participant.name || 'Participant'} className="w-full h-full rounded-full object-cover" />
                       ) : (
-                        <span className="text-xs font-medium text-gray-600">{participant.name.charAt(0)}</span>
+                        <span className="text-xs font-medium text-gray-600">{participant.name?.charAt(0) || 'U'}</span>
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{participant.name}</p>
-                      {participant._id === trip.organizer._id && (
+                      <p className="text-sm font-medium text-gray-900">{participant.name || 'Unknown'}</p>
+                      {participant._id === trip.organizer?._id && (
                         <p className="text-xs text-teal-600">Organizer</p>
                       )}
                     </div>
@@ -365,14 +394,14 @@ const TripDetails: React.FC = () => {
                     <div key={request._id} className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                          {request.user.photo ? (
-                            <img src={request.user.photo} alt={request.user.name} className="w-full h-full rounded-full object-cover" />
+                          {request.user?.photo ? (
+                            <img src={request.user.photo} alt={request.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
                           ) : (
-                            <span className="text-xs font-medium text-gray-600">{request.user.name.charAt(0)}</span>
+                            <span className="text-xs font-medium text-gray-600">{request.user?.name?.charAt(0) || 'U'}</span>
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{request.user.name}</p>
+                          <p className="text-sm font-medium text-gray-900">{request.user?.name || 'Unknown'}</p>
                           <p className="text-xs text-gray-500">{format(new Date(request.createdAt), 'MMM dd')}</p>
                         </div>
                       </div>

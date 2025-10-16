@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Message from '../models/Message.js';
 import Trip from '../models/Trip.js';
+import Notification from '../models/Notification.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -83,6 +84,22 @@ router.post('/:tripId/messages', authenticate, [
 
     await message.save();
     await message.populate('sender', 'name photo');
+
+    // Create notifications for all participants except the sender
+    const participantsToNotify = trip.participants.filter(
+      participantId => participantId.toString() !== req.user._id.toString()
+    );
+
+    for (const participantId of participantsToNotify) {
+      const notification = new Notification({
+        user: participantId,
+        sender: req.user._id,
+        type: 'new-message',
+        message: `You have a new message in the trip "${trip.title}".`,
+        trip: trip._id
+      });
+      await notification.save();
+    }
 
     res.status(201).json({
       message: 'Message sent successfully',
