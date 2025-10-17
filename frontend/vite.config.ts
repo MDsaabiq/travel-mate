@@ -9,7 +9,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://travel-mate-yxib.onrender.com',
         changeOrigin: true,
         secure: false
       }

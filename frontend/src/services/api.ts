@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://travel-mate-yxib.onrender.com';
+
 const api = axios.create({
-  baseURL: '/api', // Adjust this to your backend API base URL
+  baseURL: `${API_URL}/api`,
 });
 
 // Add a request interceptor to include the auth token

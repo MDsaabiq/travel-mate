@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
@@ -13,6 +13,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, currentImage, 
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const handleFiles = async (files: FileList) => {
     const file = files[0];
@@ -85,6 +86,33 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, currentImage, 
     fileInputRef.current?.click();
   };
 
+  useEffect(() => {
+    const handleDocumentPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            handleFiles(dt.files);
+            e.preventDefault();
+            toast.success('Image pasted from clipboard!');
+          }
+          break;
+        }
+      }
+    };
+
+    document.addEventListener('paste', handleDocumentPaste);
+
+    return () => {
+      document.removeEventListener('paste', handleDocumentPaste);
+    };
+  }, []);
+
   const removeImage = () => {
     onImageUpload('');
   };
@@ -123,6 +151,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, currentImage, 
         </div>
       ) : (
         <div
+          ref={dropZoneRef}
+          tabIndex={0}
           onClick={handleClick}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
@@ -130,7 +160,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, currentImage, 
           onDrop={handleDrop}
           className={`
             w-full h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors
-            flex flex-col items-center justify-center space-y-3
+            flex flex-col items-center justify-center space-y-3 focus:outline-none focus:ring-2 focus:ring-teal-500
             ${dragActive 
               ? 'border-teal-500 bg-teal-50' 
               : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
@@ -157,7 +187,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, currentImage, 
                   {dragActive ? 'Drop image here' : 'Upload trip cover photo'}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Drag and drop or click to select • Max 5MB • JPG, PNG, WebP
+                  Drag and drop, paste (Ctrl+V), or click to select • Max 5MB • JPG, PNG, WebP
                 </p>
               </div>
             </>

@@ -79,10 +79,13 @@ const Trips: React.FC = () => {
 
       const response = await axios.get(`/trips?${params}`);
       
+      // Filter out ended trips
+      const activeTrips = (response.data.trips || []).filter((trip: Trip & { status?: string }) => trip.status !== 'ended');
+      
       if (page === 1) {
-        setTrips(response.data.trips || []);
+        setTrips(activeTrips);
       } else {
-        setTrips(prev => [...prev, ...(response.data.trips || [])]);
+        setTrips(prev => [...prev, ...activeTrips]);
       }
       
       setPagination(response.data.pagination || {
@@ -134,15 +137,15 @@ const Trips: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Discover Amazing Trips</h1>
-          <p className="text-gray-600">Find your perfect travel companions and explore India together</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Discover Amazing Trips</h1>
+          <p className="text-sm sm:text-base text-gray-600">Find your perfect travel companions and explore India together</p>
         </div>
 
         {/* Search and Filters */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <form onSubmit={handleSearch} className="space-y-4">
             {/* Search Bar */}
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
@@ -150,22 +153,22 @@ const Trips: React.FC = () => {
                   placeholder="Search destinations, trip titles..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
-                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2"
+                className="px-4 sm:px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2 flex-shrink-0"
               >
                 <Filter className="w-5 h-5" />
-                <span>Filters</span>
+                <span className="hidden sm:inline">Filters</span>
               </button>
             </div>
 
             {/* Advanced Filters */}
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4 border-t border-gray-200">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Destination
@@ -265,7 +268,7 @@ const Trips: React.FC = () => {
 
         {/* Trips Grid */}
         {loading && trips.length === 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 animate-pulse">
                 <div className="aspect-video bg-gray-200 rounded-t-xl"></div>
@@ -279,7 +282,7 @@ const Trips: React.FC = () => {
           </div>
         ) : trips.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
               {trips.map((trip) => (
                 <TripCard key={trip._id} trip={trip} />
               ))}

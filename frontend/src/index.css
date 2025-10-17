@@ -1,3 +1,117 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Responsive Typography */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-gray-900 antialiased;
+  }
+
+  /* Mobile-first responsive adjustments */
+  @media (max-width: 640px) {
+    body {
+      @apply text-sm;
+    }
+  }
+}
+
+/* Responsive Components */
+@layer components {
+  /* Safe area padding for notched devices */
+  .safe-area {
+    @apply pl-safe-left pr-safe-right;
+  }
+
+  /* Responsive container */
+  .responsive-container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Responsive grid wrapper */
+  .responsive-grid {
+    @apply grid gap-4 sm:gap-6 lg:gap-8;
+  }
+
+  /* Touch-friendly button sizes */
+  .btn-touch {
+    @apply min-h-11 min-w-11;
+  }
+
+  /* Responsive card */
+  .card-responsive {
+    @apply rounded-lg sm:rounded-xl p-4 sm:p-6;
+  }
+
+  /* Mobile nav safe area */
+  .mobile-nav-safe {
+    @apply pb-safe-bottom;
+  }
+
+  /* Text truncation responsive */
+  .line-clamp-mobile {
+    @apply line-clamp-2 sm:line-clamp-3;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  /* Responsive font sizes */
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl md:text-2xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl md:text-3xl;
+  }
+
+  /* Responsive spacing */
+  .gap-responsive {
+    @apply gap-3 sm:gap-4 lg:gap-6;
+  }
+
+  .py-responsive {
+    @apply py-6 sm:py-8 lg:py-12;
+  }
+
+  .px-responsive {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Responsive grid columns */
+  .grid-responsive-2 {
+    @apply grid grid-cols-1 sm:grid-cols-2;
+  }
+
+  .grid-responsive-3 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-responsive-4 {
+    @apply grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4;
+  }
+
+  /* Responsive flex */
+  .flex-responsive {
+    @apply flex flex-col sm:flex-row;
+  }
+
+  /* Container queries support for modern browsers */
+  @supports (container-type: inline-size) {
+    .container-responsive {
+      container-type: inline-size;
+    }
+  }
+}

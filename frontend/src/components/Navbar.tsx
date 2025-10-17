@@ -124,7 +124,7 @@ const Navbar: React.FC = () => {
                 )}
               </button>
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-xs bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                   <div className="px-4 py-2 font-bold text-gray-700">Notifications</div>
                   <div className="max-h-80 overflow-y-auto">
                     {notifications.length > 0 ? (
@@ -132,7 +132,7 @@ const Navbar: React.FC = () => {
                         <div
                           key={notification._id}
                           onClick={() => handleNotificationClick(notification)}
-                          className={`px-4 py-2 text-sm cursor-pointer ${
+                          className={`px-4 py-2 text-sm cursor-pointer break-words ${
                             notification.isRead ? 'text-gray-500' : 'text-gray-800 font-semibold'
                           } hover:bg-gray-50`}
                         >

@@ -71,7 +71,6 @@ const Dashboard: React.FC = () => {
       ]);
 
       const trips = myTripsRes.data.trips;
-      setMyTrips(trips);
       setRecommendedTrips(recommendedRes.data.trips);
 
       // Calculate stats
@@ -85,6 +84,9 @@ const Dashboard: React.FC = () => {
         totalTrips: trips.length,
         pendingRequests: 0 // Placeholder
       });
+      
+      // Show all trips (organized and joined) in the "My Trips" section
+      setMyTrips(trips);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Failed to load dashboard data');
@@ -106,20 +108,20 @@ const Dashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl p-8 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">
+          <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl p-6 sm:p-8 text-white">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">
                   Welcome back, {user?.name}! 👋
                 </h1>
-                <p className="text-teal-100 text-lg">
+                <p className="text-teal-100 text-sm sm:text-base lg:text-lg">
                   Ready for your next adventure? Discover amazing trips or create your own.
                 </p>
               </div>
-              <div className="hidden md:block">
+              <div className="hidden md:block flex-shrink-0">
                 <Link
                   to="/create-trip"
-                  className="bg-white text-teal-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors inline-flex items-center space-x-2"
+                  className="bg-white text-teal-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors inline-flex items-center space-x-2 whitespace-nowrap"
                 >
                   <Plus className="w-5 h-5" />
                   <span>Create Trip</span>
@@ -130,51 +132,51 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Trips Organized</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.tripsOrganized}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-8">
+          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Trips Organized</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-1">{stats.tripsOrganized}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <MapPin className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Trips Joined</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.tripsJoined}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-green-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-blue-100 rounded-lg flex items-center justify-center">
+                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Trips</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalTrips}</p>
+          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Trips Joined</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-1">{stats.tripsJoined}</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-purple-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-green-100 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Chats</p>
-                <p className="text-2xl font-bold text-gray-900">{myTrips.length}</p>
+          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Trips</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-1">{stats.totalTrips}</p>
               </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <MessageCircle className="w-6 h-6 text-yellow-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-purple-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Active Chats</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 mt-1">{myTrips.length}</p>
+              </div>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
               </div>
             </div>
           </div>
@@ -200,21 +202,21 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* My Trips */}
           <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">My Trips</h2>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
+              <h2 className="text-2xl sm:text-2xl font-bold text-gray-900">My Trips</h2>
               <Link
                 to="/trips?filter=my-trips"
-                className="text-teal-600 hover:text-teal-700 font-medium text-sm"
+                className="text-teal-600 hover:text-teal-700 font-medium text-sm whitespace-nowrap"
               >
                 View all
               </Link>
             </div>
 
             {myTrips.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {myTrips.slice(0, 4).map((trip) => (
                   <TripCard key={trip._id} trip={trip} />
                 ))}

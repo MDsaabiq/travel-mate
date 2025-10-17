@@ -264,7 +264,7 @@ const TripDetails: React.FC = () => {
                   </button>
                 )}
                 
-                {isParticipant && !isOrganizer && (
+                {isParticipant && !isOrganizer && trip.status !== 'in_journey' && (
                   <button
                     onClick={handleLeaveTrip}
                     disabled={actionLoading}
@@ -274,7 +274,7 @@ const TripDetails: React.FC = () => {
                     <span>Leave Trip</span>
                   </button>
                 )}
-                {isOrganizer && (
+                {isOrganizer && trip.status !== 'in_journey' && (
                   <button
                     onClick={handleDeleteTrip}
                     disabled={actionLoading}
