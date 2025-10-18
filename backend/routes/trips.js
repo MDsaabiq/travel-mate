@@ -643,4 +643,70 @@ router.put('/:id/status', authenticate, async (req, res) => {
   }
 });
 
+// Submit a review for a trip
+router.post('/:id/reviews', authenticate, [
+  body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
+  body('description').trim().isLength({ min: 10, max: 500 }).withMessage('Review must be between 10 and 500 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const trip = await Trip.findById(req.params.id).populate('organizer', 'name photo');
+
+    if (!trip) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+
+    // Check if trip has ended
+    if (trip.status !== 'ended') {
+      return res.status(400).json({ message: 'Can only review completed trips' });
+    }
+
+    // Check if user is a participant (but not organizer)
+    if (!trip.participants.includes(req.user._id)) {
+      return res.status(403).json({ message: 'Only trip participants can review' });
+    }
+
+    if (trip.organizer._id.toString() === req.user._id.toString()) {
+      return res.status(403).json({ message: 'Organizers cannot review their own trips' });
+    }
+
+    // Check if user already reviewed
+    const alreadyReviewed = trip.reviews.some(review => review.user.toString() === req.user._id.toString());
+    if (alreadyReviewed) {
+      return res.status(400).json({ message: 'You have already reviewed this trip' });
+    }
+
+    // Add review
+    const review = {
+      user: req.user._id,
+      rating: req.body.rating,
+      description: req.body.description,
+      createdAt: new Date()
+    };
+
+    trip.reviews.push(review);
+
+    // Recalculate average rating
+    const totalRating = trip.reviews.reduce((sum, r) => sum + r.rating, 0);
+    trip.averageRating = (totalRating / trip.reviews.length).toFixed(2);
+
+    await trip.save();
+
+    // Populate user data for the review
+    await trip.populate('reviews.user', 'name photo');
+
+    res.status(201).json({
+      message: 'Review added successfully',
+      trip
+    });
+  } catch (error) {
+    console.error('Submit review error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;
