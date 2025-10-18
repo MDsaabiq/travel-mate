@@ -361,7 +361,9 @@ router.get('/:id', async (req, res) => {
     let trip = await Trip.findById(id)
       .populate('organizer', 'name photo city age travelPersona bio')
       .populate('participants', 'name photo city age travelPersona')
-      .populate('joinRequests.user', 'name photo city age travelPersona bio');
+      .populate('joinRequests.user', 'name photo city age travelPersona bio')
+      .populate('reviews.user', 'name photo')
+      .populate('previousReviews.user', 'name photo');
 
     if (!trip) {
       return res.status(404).json({ message: 'Trip not found' });

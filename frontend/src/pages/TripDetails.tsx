@@ -525,14 +525,14 @@ const TripDetails: React.FC = () => {
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                              {review.user?.photo ? (
+                              {review.user?.photo && user?._id === review.user._id ? (
                                 <img src={review.user.photo} alt={review.user.name} className="w-full h-full rounded-full object-cover" />
                               ) : (
-                                <span className="text-xs font-medium text-gray-600">{review.user?.name?.charAt(0) || 'U'}</span>
+                                <span className="text-xs font-medium text-gray-600">{user?._id === review.user?._id ? review.user?.name?.charAt(0) : 'U'}</span>
                               )}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">{review.user?.name || 'Anonymous'}</p>
+                              <p className="font-medium text-gray-900 text-sm">{user?._id === review.user?._id ? review.user?.name : 'Anonymous'}</p>
                               <p className="text-xs text-gray-500">{format(new Date(review.createdAt), 'MMM dd, yyyy')}</p>
                             </div>
                           </div>
@@ -560,14 +560,14 @@ const TripDetails: React.FC = () => {
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                              {review.user?.photo ? (
+                              {review.user?.photo && user?._id === review.user._id ? (
                                 <img src={review.user.photo} alt={review.user?.name} className="w-full h-full rounded-full object-cover" />
                               ) : (
-                                <span className="text-xs font-medium text-gray-600">{review.user?.name?.charAt(0) || 'U'}</span>
+                                <span className="text-xs font-medium text-gray-600">{user?._id === review.user?._id ? review.user?.name?.charAt(0) : 'U'}</span>
                               )}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">{review.user?.name || 'Anonymous'}</p>
+                              <p className="font-medium text-gray-900 text-sm">{user?._id === review.user?._id ? review.user?.name : 'Anonymous'}</p>
                               <p className="text-xs text-gray-500">{format(new Date(review.createdAt), 'MMM dd, yyyy')}</p>
                             </div>
                           </div>
