@@ -387,7 +387,7 @@ const TripDetails: React.FC = () => {
               </div>
               <div className="flex items-center space-x-2 text-gray-600">
                 <Clock className="w-4 h-4" />
-                <span>{Math.ceil((new Date(trip.dates.end).getTime() - new Date(trip.dates.start).getTime()) / (1000 * 60 * 60 * 24))} days</span>
+                <span>{Math.floor((new Date(trip.dates.end).getTime() - new Date(trip.dates.start).getTime()) / (1000 * 60 * 60 * 24)) + 1} days</span>
               </div>
             </div>
 

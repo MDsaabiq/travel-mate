@@ -141,7 +141,7 @@ router.post('/', authenticate, [
 
     // Generate itinerary automatically if requested
     if (generateItineraryAuto && interests) {
-      const duration = Math.ceil((new Date(dates.end) - new Date(dates.start)) / (1000 * 60 * 60 * 24));
+      const duration = Math.floor((new Date(dates.end) - new Date(dates.start)) / (1000 * 60 * 60 * 24)) + 1;
       const generatedItinerary = await generateItinerary(destination, interests, duration);
       
       if (generatedItinerary.length > 0) {

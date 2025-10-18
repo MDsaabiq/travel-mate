@@ -150,7 +150,7 @@ const CreateTrip: React.FC = () => {
 
     try {
       setGeneratingItinerary(true);
-      const duration = Math.ceil((new Date(formData.dates.end).getTime() - new Date(formData.dates.start).getTime()) / (1000 * 60 * 60 * 24));
+      const duration = Math.floor((new Date(formData.dates.end).getTime() - new Date(formData.dates.start).getTime()) / (1000 * 60 * 60 * 24)) + 1;
       
       const response = await axios.post('/trips/generate-itinerary', {
         destination: formData.destination,
