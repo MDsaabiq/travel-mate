@@ -149,25 +149,37 @@ const tripSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Helper function to get current date in IST
+function getCurrentDateIST() {
+  const now = new Date();
+  // Convert to IST (UTC+5:30)
+  const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  utcDate.setHours(0, 0, 0, 0);
+  return utcDate;
+}
+
+// Helper function to convert date to IST start of day
+function getDateStartOfDayIST(date) {
+  const dateStr = date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+  const istDate = new Date(dateStr);
+  istDate.setHours(0, 0, 0, 0);
+  return istDate;
+}
+
 // Pre-save middleware to automatically calculate status based on dates
 tripSchema.pre('save', function(next) {
-  const now = new Date();
-  const startDate = new Date(this.dates.start);
-  const endDate = new Date(this.dates.end);
-  
-  // Set time to start of day for accurate comparison
-  now.setHours(0, 0, 0, 0);
-  startDate.setHours(0, 0, 0, 0);
-  endDate.setHours(0, 0, 0, 0);
+  const now = getCurrentDateIST();
+  const startDate = getDateStartOfDayIST(this.dates.start);
+  const endDate = getDateStartOfDayIST(this.dates.end);
   
   // Debug logging
-  console.log('Status calculation debug:', {
+  console.log('Status calculation debug (IST):', {
     now: now.toISOString(),
+    nowIST: now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }),
     startDate: startDate.toISOString(),
+    startDateIST: startDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }),
     endDate: endDate.toISOString(),
-    nowTime: now.getTime(),
-    startTime: startDate.getTime(),
-    endTime: endDate.getTime()
+    endDateIST: endDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
   });
   
   if (now < startDate) {

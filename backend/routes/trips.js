@@ -19,6 +19,48 @@ try {
 
 const router = express.Router();
 
+// Helper function to get current date in IST
+function getCurrentDateIST() {
+  const now = new Date();
+  // Convert to IST (UTC+5:30)
+  const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  utcDate.setHours(0, 0, 0, 0);
+  return utcDate;
+}
+
+// Helper function to convert date to IST start of day
+function getDateStartOfDayIST(date) {
+  const dateStr = date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+  const istDate = new Date(dateStr);
+  istDate.setHours(0, 0, 0, 0);
+  return istDate;
+}
+
+// Helper function to calculate trip status based on IST
+function calculateTripStatus(trip) {
+  const now = getCurrentDateIST();
+  const startDate = getDateStartOfDayIST(trip.dates.start);
+  const endDate = getDateStartOfDayIST(trip.dates.end);
+  
+  if (now < startDate) {
+    return 'not_started';
+  } else if (now >= startDate && now <= endDate) {
+    return 'in_journey';
+  } else {
+    return 'ended';
+  }
+}
+
+// Helper function to update trip status if needed
+async function updateTripStatusIfNeeded(trip) {
+  const currentStatus = calculateTripStatus(trip);
+  if (trip.status !== currentStatus) {
+    trip.status = currentStatus;
+    await trip.save();
+  }
+  return trip;
+}
+
 // Helper function to generate itinerary using external API
 const generateItinerary = async (destination, interests, duration) => {
   try {
@@ -169,12 +211,15 @@ router.get('/', authenticate, async (req, res) => {
       query.travelMode = travelMode;
     }
 
-    const trips = await Trip.find(query)
+    let trips = await Trip.find(query)
       .populate('organizer', 'name photo city travelPersona')
       .populate('participants', 'name photo')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
+
+    // Recalculate and update trip status for each trip
+    trips = await Promise.all(trips.map(trip => updateTripStatusIfNeeded(trip)));
 
     const total = await Trip.countDocuments(query);
 
@@ -214,10 +259,13 @@ router.get('/user/my-trips', authenticate, async (req, res) => {
         ];
     }
 
-    const trips = await Trip.find(query)
+    let trips = await Trip.find(query)
       .populate('organizer', 'name photo')
       .populate('participants', 'name photo')
       .sort({ createdAt: -1 });
+
+    // Recalculate and update trip status for each trip
+    trips = await Promise.all(trips.map(trip => updateTripStatusIfNeeded(trip)));
 
     res.json({ trips });
   } catch (error) {
@@ -303,7 +351,7 @@ router.put('/bulk/update-status', authenticate, async (req, res) => {
 // Get single trip by ID
 router.get('/:id', async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id)
+    let trip = await Trip.findById(req.params.id)
       .populate('organizer', 'name photo city age travelPersona bio')
       .populate('participants', 'name photo city age travelPersona')
       .populate('joinRequests.user', 'name photo city age travelPersona bio');
@@ -311,6 +359,9 @@ router.get('/:id', async (req, res) => {
     if (!trip) {
       return res.status(404).json({ message: 'Trip not found' });
     }
+
+    // Recalculate and update trip status
+    trip = await updateTripStatusIfNeeded(trip);
 
     res.json({ trip });
   } catch (error) {
