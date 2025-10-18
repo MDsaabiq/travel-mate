@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { authenticate } from '../middleware/auth.js';
 import { upload } from '../config/cloudinary.js';
+import { Server as IOServer } from 'socket.io';
 
 // Import fetch for older Node.js versions
 let fetch;
@@ -424,6 +425,17 @@ router.post('/:id/join', authenticate, async (req, res) => {
 
     await trip.save();
 
+    // Create a notification for the trip organizer about the new join request
+    const requestUser = await User.findById(req.user._id);
+    const notification = new Notification({
+      user: trip.organizer,
+      sender: req.user._id,
+      type: 'join-request-pending',
+      message: `${requestUser.name} requested to join your trip "${trip.title}".`,
+      trip: trip._id
+    });
+    await notification.save();
+
     res.json({ message: 'Join request sent successfully' });
   } catch (error) {
     console.error('Send join request error:', error);
@@ -576,6 +588,139 @@ router.put('/:id/status', authenticate, async (req, res) => {
     });
   } catch (error) {
     console.error('Update trip status error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Add review to a trip
+router.post('/:id/reviews', authenticate, [
+  body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
+  body('description').trim().isLength({ min: 10, max: 500 }).withMessage('Description must be between 10 and 500 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const trip = await Trip.findById(req.params.id);
+
+    if (!trip) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+
+    // Check if trip is ended
+    if (trip.status !== 'ended') {
+      return res.status(400).json({ message: 'Reviews can only be added to completed trips' });
+    }
+
+    // Check if user is a participant
+    if (!trip.participants.includes(req.user._id)) {
+      return res.status(403).json({ message: 'Only trip participants can review' });
+    }
+
+    // Check if user already reviewed
+    const existingReview = trip.reviews.find(r => r.user.toString() === req.user._id.toString());
+    if (existingReview) {
+      return res.status(400).json({ message: 'You have already reviewed this trip' });
+    }
+
+    const { rating, description } = req.body;
+
+    // Add review
+    trip.reviews.push({
+      user: req.user._id,
+      rating,
+      description,
+      createdAt: new Date()
+    });
+
+    // Calculate average rating
+    const totalRating = trip.reviews.reduce((sum, review) => sum + review.rating, 0);
+    trip.averageRating = totalRating / trip.reviews.length;
+
+    await trip.save();
+
+    // Populate the trip for response
+    await trip.populate('participants', 'name photo');
+    await trip.populate('reviews.user', 'name photo');
+
+    res.status(201).json({
+      message: 'Review added successfully',
+      trip
+    });
+  } catch (error) {
+    console.error('Add review error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Restart a completed trip with new dates (organizer only)
+router.post('/:id/restart', authenticate, [
+  body('dates.start').isISO8601().withMessage('Start date is required'),
+  body('dates.end').isISO8601().withMessage('End date is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const originalTrip = await Trip.findById(req.params.id);
+
+    if (!originalTrip) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+
+    // Check if user is the organizer
+    if (originalTrip.organizer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the organizer can restart a trip' });
+    }
+
+    // Check if trip is ended
+    if (originalTrip.status !== 'ended') {
+      return res.status(400).json({ message: 'Only completed trips can be restarted' });
+    }
+
+    const { dates } = req.body;
+
+    // Validate dates
+    if (new Date(dates.start) < new Date()) {
+      return res.status(400).json({ message: 'Start date cannot be in the past' });
+    }
+
+    if (new Date(dates.end) <= new Date(dates.start)) {
+      return res.status(400).json({ message: 'End date must be after start date' });
+    }
+
+    // Create new trip with same details but new dates
+    const newTrip = new Trip({
+      title: originalTrip.title,
+      destination: originalTrip.destination,
+      coverPhoto: originalTrip.coverPhoto,
+      dates,
+      travelMode: originalTrip.travelMode,
+      itinerary: originalTrip.itinerary,
+      rules: originalTrip.rules,
+      organizer: originalTrip.organizer,
+      participants: [originalTrip.organizer],
+      maxParticipants: originalTrip.maxParticipants,
+      reviews: [], // Start with empty reviews for the new trip
+      previousReviews: originalTrip.reviews, // Keep reference to old reviews
+      averageRating: 0
+    });
+
+    await newTrip.save();
+    await newTrip.populate('organizer', 'name photo city');
+    await newTrip.populate('participants', 'name photo city');
+
+    res.status(201).json({
+      message: 'Trip restarted successfully with new dates',
+      trip: newTrip,
+      previousTripId: originalTrip._id
+    });
+  } catch (error) {
+    console.error('Restart trip error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -18,7 +18,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['join-request-accepted', 'join-request-rejected', 'new-message'],
+    enum: ['join-request-accepted', 'join-request-rejected', 'join-request-pending', 'new-message'],
     required: true
   },
   message: {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Logo from './Logo';
+import toast from 'react-hot-toast';
 import {
   Menu,
   X,
@@ -20,8 +21,14 @@ interface Notification {
   _id: string;
   message: string;
   trip: string;
+  type: string;
   isRead: boolean;
   createdAt: string;
+  sender?: {
+    _id: string;
+    name: string;
+    photo?: string;
+  };
 }
 
 const Navbar: React.FC = () => {
@@ -51,19 +58,35 @@ const Navbar: React.FC = () => {
   }, [user]);
 
   const handleNotificationClick = async (notification: Notification) => {
-    navigate(`/trips/${notification.trip}`);
-    setShowNotifications(false);
+    try {
+      navigate(`/trips/${notification.trip}`);
+      setShowNotifications(false);
 
-    if (!notification.isRead) {
-      try {
+      if (!notification.isRead) {
         await api.put(`/notifications/${notification._id}/read`);
         setNotifications(notifications.map(n =>
           n._id === notification._id ? { ...n, isRead: true } : n
         ));
-        setUnreadCount(prev => prev - 1);
-      } catch (error) {
-        console.error('Failed to mark notification as read', error);
+        setUnreadCount(prev => Math.max(0, prev - 1));
       }
+    } catch (error) {
+      console.error('Failed to handle notification:', error);
+      toast.error('Failed to navigate to trip');
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch(type) {
+      case 'join-request-pending':
+        return '🔔';
+      case 'join-request-accepted':
+        return '✅';
+      case 'join-request-rejected':
+        return '❌';
+      case 'new-message':
+        return '💬';
+      default:
+        return '📌';
     }
   };
 
@@ -124,26 +147,48 @@ const Navbar: React.FC = () => {
                 )}
               </button>
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-xs bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  <div className="px-4 py-2 font-bold text-gray-700">Notifications</div>
-                  <div className="max-h-80 overflow-y-auto">
+                <div className="absolute right-0 mt-2 w-96 max-w-md bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-blue-50">
+                    <h3 className="font-bold text-gray-900">Notifications</h3>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
                     {notifications.length > 0 ? (
                       notifications.map(notification => (
                         <div
                           key={notification._id}
                           onClick={() => handleNotificationClick(notification)}
-                          className={`px-4 py-2 text-sm cursor-pointer break-words ${
-                            notification.isRead ? 'text-gray-500' : 'text-gray-800 font-semibold'
-                          } hover:bg-gray-50`}
+                          className={`px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors ${
+                            notification.isRead 
+                              ? 'bg-white hover:bg-gray-50' 
+                              : 'bg-blue-50 hover:bg-blue-100'
+                          }`}
                         >
-                          {notification.message}
-                          <div className="text-xs text-gray-400 mt-1">
-                            {new Date(notification.createdAt).toLocaleString()}
+                          <div className="flex items-start space-x-3">
+                            <div className="text-xl pt-0.5">{getNotificationIcon(notification.type)}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm ${notification.isRead ? 'text-gray-700' : 'font-semibold text-gray-900'}`}>
+                                {notification.message}
+                              </p>
+                              {notification.sender && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  From: {notification.sender.name}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-400 mt-1">
+                                {new Date(notification.createdAt).toLocaleDateString()} {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                            {!notification.isRead && (
+                              <div className="w-2 h-2 bg-teal-600 rounded-full flex-shrink-0 mt-1" />
+                            )}
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div className="px-4 py-2 text-sm text-gray-500">No new notifications</div>
+                      <div className="px-4 py-8 text-center">
+                        <div className="text-3xl mb-2">🔔</div>
+                        <p className="text-sm text-gray-500">No notifications yet</p>
+                      </div>
                     )}
                   </div>
                 </div>

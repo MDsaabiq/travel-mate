@@ -10,11 +10,12 @@ router.get('/', authenticate, async (req, res) => {
     // First, clean up any invalid notifications (with wrong enum values)
     await Notification.deleteMany({ 
       user: req.user._id,
-      type: { $nin: ['join-request-accepted', 'join-request-rejected', 'new-message'] }
+      type: { $nin: ['join-request-accepted', 'join-request-rejected', 'join-request-pending', 'new-message'] }
     });
 
     const notifications = await Notification.find({ user: req.user._id })
       .populate('sender', 'name photo')
+      .populate('trip', 'title destination')
       .sort({ createdAt: -1 });
 
     const unreadCount = await Notification.countDocuments({ user: req.user._id, isRead: false });
@@ -53,7 +54,7 @@ router.put('/:id/read', authenticate, async (req, res) => {
 router.delete('/cleanup/invalid', authenticate, async (req, res) => {
   try {
     const result = await Notification.deleteMany({ 
-      type: { $nin: ['join-request-accepted', 'join-request-rejected', 'new-message'] }
+      type: { $nin: ['join-request-accepted', 'join-request-rejected', 'join-request-pending', 'new-message'] }
     });
 
     res.json({ 

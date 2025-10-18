@@ -10,7 +10,9 @@ import {
   MessageCircle, 
   Users, 
   Search,
-  MoreVertical
+  MoreVertical,
+  Menu,
+  X
 } from 'lucide-react';
 
 interface Message {
@@ -47,6 +49,8 @@ const Chat: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [showSidebar, setShowSidebar] = useState(window.innerWidth >= 768); // Show sidebar on desktop, hide on mobile
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const tripId = searchParams.get('trip');
@@ -193,6 +197,11 @@ const Chat: React.FC = () => {
     }
   };
 
+  const filteredTrips = userTrips.filter(trip =>
+    trip.title.toLowerCase().includes(searchText.toLowerCase()) ||
+    trip.destination.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -203,88 +212,113 @@ const Chat: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" style={{ height: 'calc(100vh - 8rem)' }}>
-          <div className="flex h-full">
-            {/* Trip List Sidebar */}
-            <div className="w-80 border-r border-gray-200 flex flex-col">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Your Trips</h2>
-                <div className="mt-3 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search trips..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto">
-                {userTrips.length === 0 ? (
-                  <div className="p-4 text-center">
-                    <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600">No trips to chat about yet.</p>
-                    <p className="text-sm text-gray-500 mt-1">Join a trip to start messaging!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1 p-2">
-                    {userTrips.map((trip) => (
-                      <button
-                        key={trip._id}
-                        onClick={() => {
-                          setSelectedTrip(trip);
-                          fetchMessages(trip._id);
-                        }}
-                        className={`w-full text-left p-3 rounded-lg transition-colors ${
-                          selectedTrip?._id === trip._id
-                            ? 'bg-teal-50 border border-teal-200'
-                            : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-medium text-sm">
-                              {trip.title.charAt(0)}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-gray-900 truncate">{trip.title}</h3>
-                            <p className="text-sm text-gray-600 truncate">{trip.destination}</p>
-                            <div className="flex items-center space-x-1 mt-1">
-                              <Users className="w-3 h-3 text-gray-400" />
-                              <span className="text-xs text-gray-500">{trip.participants.length} members</span>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+      <div className="w-full h-screen flex flex-col md:flex-row">
+        {/* Mobile: Trip List Sidebar (Hidden by default) */}
+        <div className={`absolute md:relative w-full md:w-80 h-full md:h-screen bg-white border-r border-gray-200 flex flex-col z-40 transform transition-transform duration-300 md:transform-none ${
+          showSidebar ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-900">Your Trips</h2>
+              <button
+                onClick={() => setShowSidebar(false)}
+                className="md:hidden p-1 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search trips..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
+          </div>
 
-            {/* Chat Area */}
-            <div className="flex-1 flex flex-col">
+          <div className="flex-1 overflow-y-auto">
+            {filteredTrips.length === 0 ? (
+              <div className="p-4 text-center">
+                <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600">No trips to chat about yet.</p>
+                <p className="text-sm text-gray-500 mt-1">Join a trip to start messaging!</p>
+              </div>
+            ) : (
+              <div className="space-y-1 p-2">
+                {filteredTrips.map((trip) => (
+                  <button
+                    key={trip._id}
+                    onClick={() => {
+                      setSelectedTrip(trip);
+                      fetchMessages(trip._id);
+                      setShowSidebar(false);
+                    }}
+                    className={`w-full text-left p-3 rounded-lg transition-colors ${
+                      selectedTrip?._id === trip._id
+                        ? 'bg-teal-50 border border-teal-200'
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-medium text-sm">
+                          {trip.title.charAt(0)}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900 truncate">{trip.title}</h3>
+                        <p className="text-sm text-gray-600 truncate">{trip.destination}</p>
+                        <div className="flex items-center space-x-1 mt-1">
+                          <Users className="w-3 h-3 text-gray-400" />
+                          <span className="text-xs text-gray-500">{trip.participants.length} members</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile overlay */}
+        {showSidebar && (
+          <div
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+            onClick={() => setShowSidebar(false)}
+          />
+        )}
+
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col w-full h-full">
               {selectedTrip ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200 bg-white">
-                    <div className="flex items-center justify-between">
-                      <div>
+                  <div className="p-3 sm:p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+                    <div className="flex items-center space-x-3 md:space-x-0 flex-1">
+                      <button
+                        onClick={() => setShowSidebar(true)}
+                        className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+                      >
+                        <Menu className="w-5 h-5" />
+                      </button>
+                      <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900">{selectedTrip.title}</h3>
-                        <p className="text-sm text-gray-600">{selectedTrip.destination}</p>
+                        <p className="text-xs sm:text-sm text-gray-600">{selectedTrip.destination}</p>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
-                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
 
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4">
                     {messages.length === 0 ? (
                       <div className="text-center py-8">
                         <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
@@ -299,7 +333,7 @@ const Chat: React.FC = () => {
                             key={message._id}
                             className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                           >
-                            <div className={`flex items-end space-x-2 max-w-xs lg:max-w-md ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                            <div className={`flex items-end space-x-2 max-w-xs sm:max-w-sm lg:max-w-md ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
                               {!isOwnMessage && (
                                 <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
                                   {message.sender.photo ? (
@@ -309,15 +343,15 @@ const Chat: React.FC = () => {
                                   )}
                                 </div>
                               )}
-                              <div>
+                              <div className="min-w-0">
                                 <div
-                                  className={`px-4 py-2 rounded-2xl ${
+                                  className={`px-3 sm:px-4 py-2 rounded-2xl ${
                                     isOwnMessage
                                       ? 'bg-teal-600 text-white'
                                       : 'bg-gray-100 text-gray-900'
                                   }`}
                                 >
-                                  <p className="text-sm">{message.content}</p>
+                                  <p className="text-sm break-words">{message.content}</p>
                                 </div>
                                 <div className={`mt-1 text-xs text-gray-500 ${isOwnMessage ? 'text-right' : 'text-left'}`}>
                                   {!isOwnMessage && <span className="font-medium">{message.sender.name} • </span>}
@@ -333,8 +367,8 @@ const Chat: React.FC = () => {
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-4 border-t border-gray-200 bg-white">
-                    <div className="flex items-end space-x-3">
+                  <div className="p-3 sm:p-4 border-t border-gray-200 bg-white">
+                    <div className="flex items-end space-x-2 sm:space-x-3">
                       <div className="flex-1">
                         <textarea
                           value={newMessage}
@@ -342,14 +376,14 @@ const Chat: React.FC = () => {
                           onKeyPress={handleKeyPress}
                           placeholder="Type a message..."
                           rows={1}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                          className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-sm sm:text-base"
                           style={{ minHeight: '40px', maxHeight: '120px' }}
                         />
                       </div>
                       <button
                         onClick={sendMessage}
                         disabled={!newMessage.trim() || sending}
-                        className="p-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         <Send className="w-5 h-5" />
                       </button>
