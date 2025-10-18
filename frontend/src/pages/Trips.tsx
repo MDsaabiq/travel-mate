@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Search, Filter, MapPin, Calendar } from 'lucide-react';
 import TripCard from '../components/TripCard';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 
 interface Trip {
@@ -77,7 +77,7 @@ const Trips: React.FC = () => {
         params.append('travelMode', filters.travelMode);
       }
 
-      const response = await axios.get(`/trips?${params}`);
+      const response = await api.get(`/trips?${params}`);
       
       // Filter out ended trips
       const activeTrips = (response.data.trips || []).filter((trip: Trip & { status?: string }) => trip.status !== 'ended');

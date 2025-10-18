@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   Plus, 
   MapPin, 
@@ -66,8 +66,8 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       const [myTripsRes, recommendedRes] = await Promise.all([
-        axios.get('/trips/user/my-trips'),
-        axios.get('/trips?limit=6')
+        api.get('/trips/user/my-trips'),
+        api.get('/trips?limit=6')
       ]);
 
       const trips = myTripsRes.data.trips;

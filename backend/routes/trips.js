@@ -351,7 +351,14 @@ router.put('/bulk/update-status', authenticate, async (req, res) => {
 // Get single trip by ID
 router.get('/:id', async (req, res) => {
   try {
-    let trip = await Trip.findById(req.params.id)
+    const { id } = req.params;
+
+    // Validate ID format
+    if (!id || typeof id !== 'string' || id === '[object Object]') {
+      return res.status(400).json({ message: 'Invalid trip ID format' });
+    }
+
+    let trip = await Trip.findById(id)
       .populate('organizer', 'name photo city age travelPersona bio')
       .populate('participants', 'name photo city age travelPersona')
       .populate('joinRequests.user', 'name photo city age travelPersona bio');
@@ -646,13 +653,20 @@ router.put('/:id/status', authenticate, async (req, res) => {
 // Restart a completed trip with new dates
 router.post('/:id/restart', authenticate, async (req, res) => {
   try {
+    const { id } = req.params;
+
+    // Validate ID format
+    if (!id || typeof id !== 'string' || id === '[object Object]') {
+      return res.status(400).json({ message: 'Invalid trip ID format' });
+    }
+
     const { dates } = req.body;
 
     if (!dates || !dates.start || !dates.end) {
       return res.status(400).json({ message: 'Start and end dates are required' });
     }
 
-    const trip = await Trip.findById(req.params.id);
+    const trip = await Trip.findById(id);
 
     if (!trip) {
       return res.status(404).json({ message: 'Trip not found' });
@@ -702,12 +716,19 @@ router.post('/:id/reviews', authenticate, [
   body('description').trim().isLength({ min: 10, max: 500 }).withMessage('Review must be between 10 and 500 characters')
 ], async (req, res) => {
   try {
+    const { id } = req.params;
+
+    // Validate ID format
+    if (!id || typeof id !== 'string' || id === '[object Object]') {
+      return res.status(400).json({ message: 'Invalid trip ID format' });
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const trip = await Trip.findById(req.params.id).populate('organizer', 'name photo');
+    const trip = await Trip.findById(id).populate('organizer', 'name photo');
 
     if (!trip) {
       return res.status(404).json({ message: 'Trip not found' });
