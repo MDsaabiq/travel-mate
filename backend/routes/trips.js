@@ -643,6 +643,59 @@ router.put('/:id/status', authenticate, async (req, res) => {
   }
 });
 
+// Restart a completed trip with new dates
+router.post('/:id/restart', authenticate, async (req, res) => {
+  try {
+    const { dates } = req.body;
+
+    if (!dates || !dates.start || !dates.end) {
+      return res.status(400).json({ message: 'Start and end dates are required' });
+    }
+
+    const trip = await Trip.findById(req.params.id);
+
+    if (!trip) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+
+    // Check if user is the organizer
+    if (trip.organizer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the organizer can restart this trip' });
+    }
+
+    // Validate dates
+    if (new Date(dates.start) < new Date()) {
+      return res.status(400).json({ message: 'Start date cannot be in the past' });
+    }
+
+    if (new Date(dates.end) <= new Date(dates.start)) {
+      return res.status(400).json({ message: 'End date must be after start date' });
+    }
+
+    // Move current reviews to previousReviews
+    trip.previousReviews = trip.previousReviews.concat(trip.reviews);
+    trip.reviews = [];
+    trip.averageRating = 0;
+
+    // Update dates and reset status
+    trip.dates = dates;
+    trip.status = 'not_started'; // Will be recalculated by pre-save middleware
+
+    await trip.save();
+
+    await trip.populate('organizer', 'name photo city');
+    await trip.populate('participants', 'name photo city');
+
+    res.json({
+      message: 'Trip restarted successfully',
+      trip
+    });
+  } catch (error) {
+    console.error('Restart trip error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Submit a review for a trip
 router.post('/:id/reviews', authenticate, [
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
