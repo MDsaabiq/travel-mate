@@ -15,7 +15,6 @@ router.get('/', authenticate, async (req, res) => {
 
     const notifications = await Notification.find({ user: req.user._id })
       .populate('sender', 'name photo')
-      .populate('trip', 'title destination')
       .sort({ createdAt: -1 });
 
     const unreadCount = await Notification.countDocuments({ user: req.user._id, isRead: false });
