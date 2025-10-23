@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import JoinDisclaimerModal from '../components/JoinDisclaimerModal';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -99,6 +100,7 @@ const TripDetails: React.FC = () => {
   const [restartModalOpen, setRestartModalOpen] = useState(false);
   const [restartStartDate, setRestartStartDate] = useState('');
   const [restartEndDate, setRestartEndDate] = useState('');
+  const [disclaimerModalOpen, setDisclaimerModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -120,11 +122,18 @@ const TripDetails: React.FC = () => {
     }
   };
 
-  const handleJoinTrip = async () => {
+  const handleJoinTrip = () => {
+    // Show the disclaimer modal first
+    setDisclaimerModalOpen(true);
+  };
+
+  const handleConfirmJoinTrip = async () => {
+    // After user agrees to disclaimer, proceed with joining
     try {
       setActionLoading(true);
       await api.post(`/trips/${id}/join`);
       toast.success('Join request sent successfully!');
+      setDisclaimerModalOpen(false);
       fetchTripDetails(); // Refresh data
     } catch (error: any) {
       console.error('Error joining trip:', error);
@@ -597,6 +606,37 @@ const TripDetails: React.FC = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Gender Demographics Card */}
+            <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-xl shadow-sm border-2 border-pink-200 p-6">
+              <div className="flex items-center mb-4">
+                <Users className="text-pink-600 mr-2" size={20} />
+                <h3 className="text-lg font-bold text-gray-900">Trip Composition</h3>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white rounded-lg p-3 text-center border border-blue-200">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {trip.participants.filter(p => p.gender === 'male').length}
+                  </div>
+                  <div className="text-xs text-gray-600 font-medium">Males</div>
+                </div>
+                <div className="bg-white rounded-lg p-3 text-center border border-pink-200">
+                  <div className="text-2xl font-bold text-pink-600">
+                    {trip.participants.filter(p => p.gender === 'female').length}
+                  </div>
+                  <div className="text-xs text-gray-600 font-medium">Females</div>
+                </div>
+                <div className="bg-white rounded-lg p-3 text-center border border-purple-200">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {trip.participants.filter(p => p.gender === 'other' || !p.gender).length}
+                  </div>
+                  <div className="text-xs text-gray-600 font-medium">Other</div>
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-gray-600 italic px-2">
+                📊 Safety info: Know who you're traveling with
+              </div>
+            </div>
+
             {/* Participants */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -721,6 +761,19 @@ const TripDetails: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Join Disclaimer Modal */}
+        {trip && (
+          <JoinDisclaimerModal
+            isOpen={disclaimerModalOpen}
+            tripId={trip._id}
+            tripTitle={trip.title}
+            rules={trip.rules}
+            onAgree={handleConfirmJoinTrip}
+            onCancel={() => setDisclaimerModalOpen(false)}
+            isLoading={actionLoading}
+          />
         )}
       </div>
     </div>

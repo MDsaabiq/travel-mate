@@ -207,6 +207,43 @@ tripSchema.virtual('isMaxJoined').get(function() {
   return this.participants.length >= this.maxParticipants;
 });
 
+// Method to get gender demographics of trip participants
+tripSchema.methods.getGenderDemographics = async function() {
+  try {
+    // Ensure participants are populated with gender data
+    if (!this.populated('participants')) {
+      await this.populate('participants', 'gender name');
+    }
+    
+    const demographics = {
+      male: 0,
+      female: 0,
+      other: 0,
+      total: this.participants.length
+    };
+    
+    this.participants.forEach(participant => {
+      if (participant.gender === 'male') {
+        demographics.male++;
+      } else if (participant.gender === 'female') {
+        demographics.female++;
+      } else if (participant.gender === 'other') {
+        demographics.other++;
+      }
+    });
+    
+    return demographics;
+  } catch (error) {
+    console.error('Error calculating gender demographics:', error);
+    return {
+      male: 0,
+      female: 0,
+      other: 0,
+      total: 0
+    };
+  }
+};
+
 // Ensure virtual fields are serialized
 tripSchema.set('toJSON', { virtuals: true });
 tripSchema.set('toObject', { virtuals: true });

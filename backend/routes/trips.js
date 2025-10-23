@@ -348,6 +348,30 @@ router.put('/bulk/update-status', authenticate, async (req, res) => {
   }
 });
 
+// Get trip gender demographics (MUST be before /:id route)
+router.get('/:id/demographics', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let trip = await Trip.findById(id)
+      .populate('participants', 'gender');
+
+    if (!trip) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+
+    const demographics = await trip.getGenderDemographics();
+
+    res.json({ 
+      demographics,
+      status: trip.status
+    });
+  } catch (error) {
+    console.error('Get demographics error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get single trip by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -359,9 +383,9 @@ router.get('/:id', async (req, res) => {
     }
 
     let trip = await Trip.findById(id)
-      .populate('organizer', 'name photo city age travelPersona bio')
-      .populate('participants', 'name photo city age travelPersona')
-      .populate('joinRequests.user', 'name photo city age travelPersona bio')
+      .populate('organizer', 'name photo city age travelPersona bio gender')
+      .populate('participants', 'name photo city age travelPersona gender')
+      .populate('joinRequests.user', 'name photo city age travelPersona bio gender')
       .populate('reviews.user', 'name photo')
       .populate('previousReviews.user', 'name photo');
 
