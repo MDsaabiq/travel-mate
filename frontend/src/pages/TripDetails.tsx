@@ -541,7 +541,7 @@ const TripDetails: React.FC = () => {
                               )}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">{user?._id === review.user?._id ? review.user?.name : 'Anonymous'}</p>
+                              <p className="font-medium text-gray-900 text-sm">{review.user?.name || 'Anonymous'}</p>
                               <p className="text-xs text-gray-500">{format(new Date(review.createdAt), 'MMM dd, yyyy')}</p>
                             </div>
                           </div>
@@ -576,7 +576,7 @@ const TripDetails: React.FC = () => {
                               )}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">{user?._id === review.user?._id ? review.user?.name : 'Anonymous'}</p>
+                              <p className="font-medium text-gray-900 text-sm">{review.user?.name || 'Anonymous'}</p>
                               <p className="text-xs text-gray-500">{format(new Date(review.createdAt), 'MMM dd, yyyy')}</p>
                             </div>
                           </div>
