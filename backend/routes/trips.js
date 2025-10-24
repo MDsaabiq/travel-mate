@@ -720,6 +720,7 @@ router.post('/:id/restart', authenticate, async (req, res) => {
     // Update dates and reset status
     trip.dates = dates;
     trip.status = 'not_started'; // Will be recalculated by pre-save middleware
+    trip.isActive = true; // Re-activate the trip when restarting
 
     await trip.save();
 
